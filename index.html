@@ -304,7 +304,7 @@ function doJump(){
     requestAnimationFrame(loop);
     return;
   }
-  if(state==='dead'){restart();return;}
+  if(state==='dead'){state='redirecting'; draw(); setTimeout(()=>{window.location.href='https://sp101g4.vercel.app/';},1500); return;}
   if(state==='running'&&dino.gr){dino.vy=-13; dino.gr=false;}
 }
 
@@ -457,13 +457,18 @@ function draw(){
   ctx.fillStyle=TXT; ctx.fillText(sc, GW-14, 32);
 
   // game over
-  if(state==='dead'){
+  if(state==='dead'||state==='redirecting'){
     ctx.textAlign='center';
     ctx.fillStyle=TXT;
     ctx.font='bold 18px "Courier New",monospace';
     ctx.letterSpacing='8px';
-    ctx.fillText('GAME OVER', GW/2, GH/2-30);
+    ctx.fillText('SP101: Intellectual Property Issues', GW/2, GH/2-30);
     ctx.letterSpacing='0px';
+    if(state==='redirecting'){
+      ctx.font='14px "Courier New",monospace';
+      ctx.fillStyle=DIM;
+      ctx.fillText('redirecting...', GW/2, GH/2+10);
+    } else {
     const cx=GW/2, cy=GH/2+4;
     ctx.strokeStyle=TXT; ctx.lineWidth=2;
     ctx.beginPath(); ctx.roundRect(cx-22,cy-18,44,36,4); ctx.stroke();
@@ -476,8 +481,9 @@ function draw(){
     ctx.font='12px "Courier New",monospace';
     ctx.fillStyle=DIM;
     ctx.letterSpacing='2px';
-    ctx.fillText('SPACE TO RETRY', GW/2, GH/2+38);
+    ctx.fillText('i wanna know', GW/2, GH/2+38);
     ctx.letterSpacing='0px';
+    }
   }
 }
 
