@@ -1,493 +1,564 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>No Internet</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;min-height:100%;background:#f1f3f4;font-family:Arial,sans-serif;user-select:none;}
-#err-page{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:60px 100px;min-height:100vh;}
-#err-dino{margin-bottom:24px;cursor:pointer;}
-#err-title{font-size:20px;color:#202124;margin-bottom:12px;}
-#err-try{font-size:13px;color:#70757a;margin-bottom:4px;}
-#err-list{font-size:13px;color:#70757a;margin-left:20px;line-height:1.9;}
-#err-list a{color:#1a73e8;text-decoration:none;}
-#err-code{font-size:12px;color:#9aa0a6;margin-top:14px;}
-#space-hint{font-size:12px;color:#bbb;margin-top:10px;}
-#game-page{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100vh;background:#f1f3f4;}
-canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
-</style>
+  <meta charset="UTF-8">
+  <title>No Internet</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: #f1f3f4;
+      font-family: Arial, sans-serif;
+      user-select: none;
+    }
+
+    #err-page {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 60px 100px;
+      min-height: 100vh;
+    }
+
+    #err-dino {
+      margin-bottom: 24px;
+      cursor: pointer;
+    }
+
+    #err-title {
+      font-size: 20px;
+      color: #202124;
+      margin-bottom: 12px;
+    }
+
+    #err-try {
+      font-size: 13px;
+      color: #70757a;
+      margin-bottom: 4px;
+    }
+
+    #err-list {
+      font-size: 13px;
+      color: #70757a;
+      margin-left: 20px;
+      line-height: 1.9;
+    }
+
+    #err-list a {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+
+    #err-code {
+      font-size: 12px;
+      color: #9aa0a6;
+      margin-top: 14px;
+    }
+
+    #space-hint {
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 10px;
+    }
+
+    #game-page {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100vh;
+      background: #f1f3f4;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+  </style>
 </head>
+
 <body>
-<div id="err-page">
-  <div id="err-dino"><canvas id="ec" width="62" height="44"></canvas></div>
-  <div id="err-title">Press Space to play</div>
-  <div id="err-try">Try:</div>
-  <ul id="err-list">
-    <li>Checking the network cables, modem and router</li>
-    <li>Reconnecting to Wi-Fi</li>
-    <li><a href="#">Running Windows Network Diagnostics</a></li>
-  </ul>
-  <div id="err-code">ERR_INTERNET_DISCONNECTED</div>
-  <div id="space-hint">PRESS SPACE / CLICK TO START</div>
-</div>
-<div id="game-page">
-  <canvas id="c"></canvas>
-</div>
+  <div id="err-page">
+    <div id="err-dino"><canvas id="ec" width="62" height="44"></canvas></div>
+    <div id="err-title">Press Space to play</div>
+    <div id="err-try">Try:</div>
+    <ul id="err-list">
+      <li>Checking the network cables, modem and router</li>
+      <li>Reconnecting to Wi-Fi</li>
+      <li><a href="#">Running Windows Network Diagnostics</a></li>
+    </ul>
+    <div id="err-code">ERR_INTERNET_DISCONNECTED</div>
+    <div id="space-hint">PRESS SPACE / CLICK TO START</div>
+  </div>
+  <div id="game-page">
+    <canvas id="c"></canvas>
+  </div>
 
-<script>
-// ═══════════════════════════════════════════════
-//  SPRITES — pixel-extracted from real screenshots
-//  Scale: each "1" renders as 2×2 canvas pixels
-// ═══════════════════════════════════════════════
+  <script>
+    // ═══════════════════════════════════════════════
+    //  SPRITES — pixel-extracted from real screenshots
+    //  Scale: each "1" renders as 2×2 canvas pixels
+    // ═══════════════════════════════════════════════
 
-// Dino run frame 1 — 31×22 sprite px (extracted via Python)
-const DINO_RUN1 = [
-  "0000000000001111111100000000000",
-  "0000000000011011111110000000000",
-  "0000000000011011111110000000000",
-  "0000000000011111111110000000000",
-  "0000000000011111111110000000000",
-  "0000000000011111000000000000000",
-  "0000000000011111000000000000000",
-  "0000000000011110000000000000000",
-  "0100000000111110000000000000000",
-  "0100000011111110000000000000000",
-  "0110000111111110100000000000000",
-  "0111001111111110000000000000000",
-  "0111111111111110000000000000000",
-  "0011111111111110000000000000000",
-  "0001111111111100000000000000000",
-  "0000111111111000000000000000000",
-  "0000011111110000000000000000000",
-  "0000001110010000000000000000000",
-  "0000001100000000000000000000000",
-  "0000001000000000000000000000000",
-  "0000001000000000000000000000000",
-  "0000000000000000000000000000000",
-];
+    // Dino run frame 1 — 31×22 sprite px (extracted via Python)
+    const DINO_RUN1 = [
+      "0000000000001111111100000000000",
+      "0000000000011011111110000000000",
+      "0000000000011011111110000000000",
+      "0000000000011111111110000000000",
+      "0000000000011111111110000000000",
+      "0000000000011111000000000000000",
+      "0000000000011111000000000000000",
+      "0000000000011110000000000000000",
+      "0100000000111110000000000000000",
+      "0100000011111110000000000000000",
+      "0110000111111110100000000000000",
+      "0111001111111110000000000000000",
+      "0111111111111110000000000000000",
+      "0011111111111110000000000000000",
+      "0001111111111100000000000000000",
+      "0000111111111000000000000000000",
+      "0000011111110000000000000000000",
+      "0000001110010000000000000000000",
+      "0000001100000000000000000000000",
+      "0000001000000000000000000000000",
+      "0000001000000000000000000000000",
+      "0000000000000000000000000000000",
+    ];
 
-// Dino run frame 2 — legs swapped
-const DINO_RUN2 = [
-  "0000000000001111111100000000000",
-  "0000000000011011111110000000000",
-  "0000000000011011111110000000000",
-  "0000000000011111111110000000000",
-  "0000000000011111111110000000000",
-  "0000000000011111000000000000000",
-  "0000000000011111000000000000000",
-  "0000000000011110000000000000000",
-  "0100000000111110000000000000000",
-  "0100000011111110000000000000000",
-  "0110000111111110100000000000000",
-  "0111001111111110000000000000000",
-  "0111111111111110000000000000000",
-  "0011111111111110000000000000000",
-  "0001111111111100000000000000000",
-  "0000111111111000000000000000000",
-  "0000011111110000000000000000000",
-  "0000001110000000000000000000000",
-  "0000001001000000000000000000000",
-  "0000001001000000000000000000000",
-  "0000000010000000000000000000000",
-  "0000000000000000000000000000000",
-];
+    // Dino run frame 2 — legs swapped
+    const DINO_RUN2 = [
+      "0000000000001111111100000000000",
+      "0000000000011011111110000000000",
+      "0000000000011011111110000000000",
+      "0000000000011111111110000000000",
+      "0000000000011111111110000000000",
+      "0000000000011111000000000000000",
+      "0000000000011111000000000000000",
+      "0000000000011110000000000000000",
+      "0100000000111110000000000000000",
+      "0100000011111110000000000000000",
+      "0110000111111110100000000000000",
+      "0111001111111110000000000000000",
+      "0111111111111110000000000000000",
+      "0011111111111110000000000000000",
+      "0001111111111100000000000000000",
+      "0000111111111000000000000000000",
+      "0000011111110000000000000000000",
+      "0000001110000000000000000000000",
+      "0000001001000000000000000000000",
+      "0000001001000000000000000000000",
+      "0000000010000000000000000000000",
+      "0000000000000000000000000000000",
+    ];
 
-// Dino dead — X eyes
-const DINO_DEAD = [
-  "0000000000001111111100000000000",
-  "0000000000011011111110000000000",
-  "0000000000011101111110000000000",
-  "0000000000011011111110000000000",
-  "0000000000011111111110000000000",
-  "0000000000011111000000000000000",
-  "0000000000011111000000000000000",
-  "0000000000011110000000000000000",
-  "0100000000111110000000000000000",
-  "0100000011111110000000000000000",
-  "0110000111111110100000000000000",
-  "0111001111111110000000000000000",
-  "0111111111111110000000000000000",
-  "0011111111111110000000000000000",
-  "0001111111111100000000000000000",
-  "0000111111111000000000000000000",
-  "0000011111110000000000000000000",
-  "0000001110010000000000000000000",
-  "0000001100000000000000000000000",
-  "0000001000000000000000000000000",
-  "0000001000000000000000000000000",
-  "0000000000000000000000000000000",
-];
+    // Dino dead — X eyes
+    const DINO_DEAD = [
+      "0000000000001111111100000000000",
+      "0000000000011011111110000000000",
+      "0000000000011101111110000000000",
+      "0000000000011011111110000000000",
+      "0000000000011111111110000000000",
+      "0000000000011111000000000000000",
+      "0000000000011111000000000000000",
+      "0000000000011110000000000000000",
+      "0100000000111110000000000000000",
+      "0100000011111110000000000000000",
+      "0110000111111110100000000000000",
+      "0111001111111110000000000000000",
+      "0111111111111110000000000000000",
+      "0011111111111110000000000000000",
+      "0001111111111100000000000000000",
+      "0000111111111000000000000000000",
+      "0000011111110000000000000000000",
+      "0000001110010000000000000000000",
+      "0000001100000000000000000000000",
+      "0000001000000000000000000000000",
+      "0000001000000000000000000000000",
+      "0000000000000000000000000000000",
+    ];
 
-// ── CACTUS — pixel-perfect from your screenshot ──
-// 29×32 sprite pixels (rows 0-31, before ground line)
-// Extracted directly via Python image analysis
-const CACTUS = [
-  "00000000000000111000000000000",
-  "00000000000001111100000000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-  "01000000100001111110000100000",
-  "11100001110001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111001111110001110000",
-  "11100011111011111110001110000",
-  "11100011111111111110001110000",
-  "11100011111111111110001110000",
-  "11100001111111111110001110000",
-  "11100000111111111110001110000",
-  "11100000010011111110001110000",
-  "11000000000001111110001110000",
-  "10000000000001111111111110000",
-  "00000000000001111111111100000",
-  "00000000000001111111111000000",
-  "00000000000001111111110000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-  "00000000000001111110000000000",
-];
+    // ── CACTUS — pixel-perfect from your screenshot ──
+    // 29×32 sprite pixels (rows 0-31, before ground line)
+    // Extracted directly via Python image analysis
+    const CACTUS = [
+      "00000000000000111000000000000",
+      "00000000000001111100000000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+      "01000000100001111110000100000",
+      "11100001110001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111001111110001110000",
+      "11100011111011111110001110000",
+      "11100011111111111110001110000",
+      "11100011111111111110001110000",
+      "11100001111111111110001110000",
+      "11100000111111111110001110000",
+      "11100000010011111110001110000",
+      "11000000000001111110001110000",
+      "10000000000001111111111110000",
+      "00000000000001111111111100000",
+      "00000000000001111111111000000",
+      "00000000000001111111110000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+      "00000000000001111110000000000",
+    ];
 
-// Single small cactus — narrow, no side arms on left
-const CACTUS_SMALL = [
-  "00000001110000000",
-  "00000011111000000",
-  "00000011111000000",
-  "10000011111000010",
-  "11000011111000110",
-  "11100011111001110",
-  "11100011111001110",
-  "11100011111001110",
-  "11100011111001110",
-  "11100011111001110",
-  "11100111111001110",
-  "11111111111001110",
-  "01111111111001110",
-  "00011111111111110",
-  "00001111111111100",
-  "00000111111110000",
-  "00000011111000000",
-  "00000011111000000",
-  "00000011111000000",
-  "00000011111000000",
-  "00000011111000000",
-  "00000011111000000",
-  "00000011111000000",
-  "00000011111000000",
-];
+    // Single small cactus — narrow, no side arms on left
+    const CACTUS_SMALL = [
+      "00000001110000000",
+      "00000011111000000",
+      "00000011111000000",
+      "10000011111000010",
+      "11000011111000110",
+      "11100011111001110",
+      "11100011111001110",
+      "11100011111001110",
+      "11100011111001110",
+      "11100011111001110",
+      "11100111111001110",
+      "11111111111001110",
+      "01111111111001110",
+      "00011111111111110",
+      "00001111111111100",
+      "00000111111110000",
+      "00000011111000000",
+      "00000011111000000",
+      "00000011111000000",
+      "00000011111000000",
+      "00000011111000000",
+      "00000011111000000",
+      "00000011111000000",
+      "00000011111000000",
+    ];
 
-// Bird frame 1 — wings up  (23×12 sprite px)
-const BIRD_F1 = [
-  "00000000000000000001110",
-  "00000000000000000111110",
-  "00000000000011111111110",
-  "00000001111111111111110",
-  "01100111111111111111100",
-  "11111111111111111111000",
-  "01100111111111111111000",
-  "00000001111111111110000",
-  "00000000000011111110000",
-  "00000000000000011100000",
-  "00000000000000000000000",
-  "00000000000000000000000",
-];
+    // Bird frame 1 — wings up  (23×12 sprite px)
+    const BIRD_F1 = [
+      "00000000000000000001110",
+      "00000000000000000111110",
+      "00000000000011111111110",
+      "00000001111111111111110",
+      "01100111111111111111100",
+      "11111111111111111111000",
+      "01100111111111111111000",
+      "00000001111111111110000",
+      "00000000000011111110000",
+      "00000000000000011100000",
+      "00000000000000000000000",
+      "00000000000000000000000",
+    ];
 
-// Bird frame 2 — wings down
-const BIRD_F2 = [
-  "00000000000000000000000",
-  "00000000000000000000000",
-  "01100111111111111111100",
-  "11111111111111111111000",
-  "01100111111111111111000",
-  "00000001111111111110000",
-  "00000000000011111110000",
-  "00000000000000011100000",
-  "00000000000011111110000",
-  "00000001111111111110000",
-  "00000001111111100000000",
-  "00000000000000000000000",
-];
+    // Bird frame 2 — wings down
+    const BIRD_F2 = [
+      "00000000000000000000000",
+      "00000000000000000000000",
+      "01100111111111111111100",
+      "11111111111111111111000",
+      "01100111111111111111000",
+      "00000001111111111110000",
+      "00000000000011111110000",
+      "00000000000000011100000",
+      "00000000000011111110000",
+      "00000001111111111110000",
+      "00000001111111100000000",
+      "00000000000000000000000",
+    ];
 
-// ── PRE-BAKE ALL SPRITES ─────────────────────────
-const S = 2; // 1 sprite px = 2×2 canvas px
-const COL = '#535353';
+    // ── PRE-BAKE ALL SPRITES ─────────────────────────
+    const S = 2; // 1 sprite px = 2×2 canvas px
+    const COL = '#535353';
 
-function bake(grid, col) {
-  const rows = grid.length, cols = grid[0].length;
-  const oc = document.createElement('canvas');
-  oc.width = cols * S; oc.height = rows * S;
-  const ox = oc.getContext('2d');
-  for (let r = 0; r < rows; r++)
-    for (let c = 0; c < cols; c++)
-      if (grid[r][c] === '1') {
-        ox.fillStyle = col;
-        ox.fillRect(c*S, r*S, S, S);
-      }
-  return oc;
-}
-
-const SP = {
-  run1:   bake(DINO_RUN1,    COL),
-  run2:   bake(DINO_RUN2,    COL),
-  dead:   bake(DINO_DEAD,    COL),
-  cactus: bake(CACTUS,       COL),   // double-arm cactus
-  cactS:  bake(CACTUS_SMALL, COL),   // small single cactus
-  bird1:  bake(BIRD_F1,      COL),
-  bird2:  bake(BIRD_F2,      COL),
-};
-
-// Sprite canvas dimensions
-const DINO_W  = DINO_RUN1[0].length * S;   // 62
-const DINO_H  = DINO_RUN1.length    * S;   // 44
-const CACT_W  = CACTUS[0].length    * S;   // 58
-const CACT_H  = CACTUS.length       * S;   // 64
-const CACTS_W = CACTUS_SMALL[0].length * S; // 34
-const CACTS_H = CACTUS_SMALL.length    * S; // 48
-const BIRD_W  = BIRD_F1[0].length   * S;   // 46
-const BIRD_H  = BIRD_F1.length      * S;   // 24
-
-// ── ERR PAGE ────────────────────────────────────
-const ec = document.getElementById('ec');
-const ectx = ec.getContext('2d');
-ectx.fillStyle = '#f1f3f4'; ectx.fillRect(0,0,62,44);
-ectx.drawImage(SP.run1, 0, 0);
-
-// ── GAME ────────────────────────────────────────
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
-const GW = 700, GH = 300;
-canvas.width = GW; canvas.height = GH;
-
-const GY    = 228;  // ground y
-const BG    = '#f1f3f4';
-const TXT   = '#535353';
-const DIM   = '#767676';
-
-let hiScore=0, score=0, spd=6, tick=0;
-let flashT=0, lastMS=0, groundX=0;
-let state='idle';
-let obs=[], birds=[], clouds=[], parts=[];
-let nextObs=100, nextBird=500;
-let gameStarted = false;
-
-const dino = { x:60, y:GY, vy:0, gr:true, duck:false, af:0 };
-
-function initClouds(){
-  clouds=[{x:140,y:55},{x:360,y:36},{x:560,y:62}];
-}
-initClouds();
-
-// ── INPUT ────────────────────────────────────────
-window.addEventListener('keydown', e=>{
-  if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault(); doJump();}
-  if(e.code==='ArrowDown'){e.preventDefault(); dino.duck=true;}
-});
-window.addEventListener('keyup', e=>{
-  if(e.code==='ArrowDown') dino.duck=false;
-});
-document.addEventListener('pointerdown', doJump);
-
-function doJump(){
-  if(!gameStarted){
-    document.getElementById('err-page').style.display='none';
-    document.getElementById('game-page').style.display='flex';
-    gameStarted=true; state='running';
-    requestAnimationFrame(loop);
-    return;
-  }
-  if(state==='dead'){state='redirecting'; draw(); setTimeout(()=>{window.location.href='https://sp101g4.vercel.app/';},1500); return;}
-  if(state==='running'&&dino.gr){dino.vy=-13; dino.gr=false;}
-}
-
-function restart(){
-  score=0;spd=6;tick=0;flashT=0;lastMS=0;groundX=0;
-  dino.y=GY;dino.vy=0;dino.gr=true;dino.duck=false;dino.af=0;
-  obs=[];birds=[];parts=[];nextObs=100;nextBird=500;
-  initClouds(); state='running';
-}
-
-// ── UPDATE ───────────────────────────────────────
-function update(){
-  if(state!=='running')return;
-  tick++;
-  score+=spd*0.03;
-  spd=Math.min(18, 6+score*0.004);
-
-  const ms=Math.floor(score/100)*100;
-  if(ms>0&&ms!==lastMS){lastMS=ms;flashT=6;}
-  if(flashT>0)flashT--;
-
-  const gt=dino.duck ? GY+14 : GY;
-  if(!dino.gr){
-    dino.vy+=0.65; dino.y+=dino.vy;
-    if(dino.y>=gt){dino.y=gt;dino.vy=0;dino.gr=true;}
-  } else { dino.y=gt; }
-  dino.af++;
-
-  groundX=(groundX-spd); if(groundX<-GW) groundX+=GW;
-  clouds.forEach(c=>{c.x-=spd*0.18; if(c.x<-90) c.x=GW+90;});
-
-  nextObs--;
-  if(nextObs<=0){
-    obs.push({x:GW+10, t:Math.floor(Math.random()*3)});
-    nextObs=60+Math.random()*90+Math.max(0,30-spd*1.5);
-  }
-  obs.forEach(o=>o.x-=spd);
-  obs=obs.filter(o=>o.x>-90);
-
-  if(score>200){
-    nextBird--;
-    if(nextBird<=0){
-      const ys=[GY-90,GY-115,GY-65];
-      birds.push({x:GW+10, y:ys[Math.floor(Math.random()*3)]});
-      nextBird=130+Math.random()*110;
+    function bake(grid, col) {
+      const rows = grid.length, cols = grid[0].length;
+      const oc = document.createElement('canvas');
+      oc.width = cols * S; oc.height = rows * S;
+      const ox = oc.getContext('2d');
+      for (let r = 0; r < rows; r++)
+        for (let c = 0; c < cols; c++)
+          if (grid[r][c] === '1') {
+            ox.fillStyle = col;
+            ox.fillRect(c * S, r * S, S, S);
+          }
+      return oc;
     }
-  }
-  birds.forEach(b=>b.x-=spd*1.1);
-  birds=birds.filter(b=>b.x>-100);
 
-  parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.3;p.life-=0.05;});
-  parts=parts.filter(p=>p.life>0);
+    const SP = {
+      run1: bake(DINO_RUN1, COL),
+      run2: bake(DINO_RUN2, COL),
+      dead: bake(DINO_DEAD, COL),
+      cactus: bake(CACTUS, COL),   // double-arm cactus
+      cactS: bake(CACTUS_SMALL, COL),   // small single cactus
+      bird1: bake(BIRD_F1, COL),
+      bird2: bake(BIRD_F2, COL),
+    };
 
-  // collisions
-  const db=dbox();
-  for(const o of obs)  if(hit(db, obox(o))){die();return;}
-  for(const b of birds)if(hit(db, {x:b.x+6,y:b.y+4,w:BIRD_W-12,h:BIRD_H-6})){die();return;}
-}
+    // Sprite canvas dimensions
+    const DINO_W = DINO_RUN1[0].length * S;   // 62
+    const DINO_H = DINO_RUN1.length * S;   // 44
+    const CACT_W = CACTUS[0].length * S;   // 58
+    const CACT_H = CACTUS.length * S;   // 64
+    const CACTS_W = CACTUS_SMALL[0].length * S; // 34
+    const CACTS_H = CACTUS_SMALL.length * S; // 48
+    const BIRD_W = BIRD_F1[0].length * S;   // 46
+    const BIRD_H = BIRD_F1.length * S;   // 24
 
-function dbox(){
-  if(dino.duck) return{x:dino.x+8, y:dino.y-20, w:DINO_W-16, h:20};
-  return{x:dino.x+10, y:dino.y-DINO_H+6, w:DINO_W-18, h:DINO_H-10};
-}
-function obox(o){
-  if(o.t===0) return{x:o.x+4, y:GY-CACT_H,  w:CACT_W-8,  h:CACT_H};
-  if(o.t===1) return{x:o.x+4, y:GY-CACTS_H, w:CACTS_W-8, h:CACTS_H};
-  // double = two small side by side
-  return{x:o.x+4, y:GY-CACT_H, w:CACT_W+CACTS_W-4, h:CACT_H};
-}
-function hit(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+    // ── ERR PAGE ────────────────────────────────────
+    const ec = document.getElementById('ec');
+    const ectx = ec.getContext('2d');
+    ectx.fillStyle = '#f1f3f4'; ectx.fillRect(0, 0, 62, 44);
+    ectx.drawImage(SP.run1, 0, 0);
 
-function die(){
-  state='dead';
-  if(score>hiScore)hiScore=score;
-  for(let i=0;i<16;i++){
-    parts.push({
-      x:dino.x+20, y:dino.y-DINO_H/2,
-      vx:(Math.random()-.5)*6,
-      vy:(Math.random()-1.3)*6,
-      life:1
+    // ── GAME ────────────────────────────────────────
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const GW = 700, GH = 300;
+    canvas.width = GW; canvas.height = GH;
+
+    const GY = 228;  // ground y
+    const BG = '#f1f3f4';
+    const TXT = '#535353';
+    const DIM = '#767676';
+
+    let hiScore = 0, score = 0, spd = 6, tick = 0;
+    let flashT = 0, lastMS = 0, groundX = 0;
+    let state = 'idle';
+    let obs = [], birds = [], clouds = [], parts = [];
+    let nextObs = 100, nextBird = 500;
+    let gameStarted = false;
+
+    const dino = { x: 60, y: GY, vy: 0, gr: true, duck: false, af: 0 };
+
+    function initClouds() {
+      clouds = [{ x: 140, y: 55 }, { x: 360, y: 36 }, { x: 560, y: 62 }];
+    }
+    initClouds();
+
+    // ── INPUT ────────────────────────────────────────
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); doJump(); }
+      if (e.code === 'ArrowDown') { e.preventDefault(); dino.duck = true; }
     });
-  }
-}
+    window.addEventListener('keyup', e => {
+      if (e.code === 'ArrowDown') dino.duck = false;
+    });
+    document.addEventListener('pointerdown', doJump);
 
-// ── DRAW ─────────────────────────────────────────
-function drawCloud(x,y){
-  ctx.fillStyle='#ccc';
-  ctx.fillRect(x+16,y,    26,10);
-  ctx.fillRect(x+8, y+8,  40,10);
-  ctx.fillRect(x,   y+14, 54, 8);
-}
-
-function draw(){
-  ctx.fillStyle=BG; ctx.fillRect(0,0,GW,GH);
-  if(flashT>0&&flashT%2===0){ctx.fillStyle='#e8e8e8'; ctx.fillRect(0,0,GW,GH);}
-
-  clouds.forEach(c=>drawCloud(c.x,c.y));
-
-  // ground
-  ctx.fillStyle=COL; ctx.fillRect(0,GY+2,GW,2);
-  for(let i=0;i<28;i++){
-    const gx=((groundX+i*32)%GW+GW)%GW;
-    ctx.fillStyle='#bbb';
-    ctx.fillRect(gx,    GY+6, 18,2);
-    ctx.fillRect(gx+12, GY+10, 8,2);
-  }
-
-  // obstacles
-  obs.forEach(o=>{
-    if(o.t===0){
-      // double-arm cactus (from your screenshot)
-      ctx.drawImage(SP.cactus, o.x, GY-CACT_H);
-    } else if(o.t===1){
-      // small single cactus
-      ctx.drawImage(SP.cactS,  o.x, GY-CACTS_H);
-    } else {
-      // two double-arm cacti side by side
-      ctx.drawImage(SP.cactus, o.x,            GY-CACT_H);
-      ctx.drawImage(SP.cactus, o.x+CACT_W+4,   GY-CACT_H);
+    function doJump() {
+      if (!gameStarted) {
+        document.getElementById('err-page').style.display = 'none';
+        document.getElementById('game-page').style.display = 'flex';
+        gameStarted = true; state = 'running';
+        requestAnimationFrame(loop);
+        return;
+      }
+      if (state === 'dead') { state = 'redirecting'; draw(); setTimeout(() => { window.location.href = 'https://intelprop.vercel.app/'; }, 1500); return; }
+      if (state === 'running' && dino.gr) { dino.vy = -13; dino.gr = false; }
     }
-  });
 
-  // birds
-  const bsp = Math.floor(tick/10)%2===0 ? SP.bird1 : SP.bird2;
-  birds.forEach(b=>ctx.drawImage(bsp, b.x, b.y));
-
-  // dino
-  let dsp;
-  if(state==='dead')        dsp=SP.dead;
-  else if(!dino.gr)         dsp=SP.run1;
-  else dsp=Math.floor(dino.af/7)%2===0 ? SP.run1 : SP.run2;
-
-  ctx.drawImage(dsp, dino.x, dino.y-DINO_H);
-
-  // particles
-  parts.forEach(p=>{
-    ctx.globalAlpha=Math.max(0,p.life);
-    ctx.fillStyle=COL;
-    ctx.fillRect(p.x,p.y,4,4);
-  });
-  ctx.globalAlpha=1;
-
-  // score
-  ctx.font='bold 20px "Courier New",monospace';
-  ctx.textAlign='right';
-  const sc=String(Math.floor(score)).padStart(5,'0');
-  const hi=String(Math.floor(Math.max(hiScore,score))).padStart(5,'0');
-  ctx.fillStyle=DIM; ctx.fillText('HI',GW-162,32);
-  ctx.fillStyle=TXT; ctx.fillText(hi, GW-90, 32);
-  ctx.fillStyle=TXT; ctx.fillText(sc, GW-14, 32);
-
-  // game over
-  if(state==='dead'||state==='redirecting'){
-    ctx.textAlign='center';
-    ctx.fillStyle=TXT;
-    ctx.font='bold 18px "Courier New",monospace';
-    ctx.letterSpacing='8px';
-    ctx.fillText('SP101: Intellectual Property Issues', GW/2, GH/2-30);
-    ctx.letterSpacing='0px';
-    if(state==='redirecting'){
-      ctx.font='14px "Courier New",monospace';
-      ctx.fillStyle=DIM;
-      ctx.fillText('redirecting...', GW/2, GH/2+10);
-    } else {
-    const cx=GW/2, cy=GH/2+4;
-    ctx.strokeStyle=TXT; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.roundRect(cx-22,cy-18,44,36,4); ctx.stroke();
-    ctx.strokeStyle=TXT; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.arc(cx,cy,10,0.7,Math.PI*2-0.7); ctx.stroke();
-    ctx.fillStyle=TXT;
-    ctx.beginPath();
-    ctx.moveTo(cx+9,cy-4); ctx.lineTo(cx+15,cy); ctx.lineTo(cx+9,cy+4);
-    ctx.fill();
-    ctx.font='12px "Courier New",monospace';
-    ctx.fillStyle=DIM;
-    ctx.letterSpacing='2px';
-    ctx.fillText('i wanna know', GW/2, GH/2+38);
-    ctx.letterSpacing='0px';
+    function restart() {
+      score = 0; spd = 6; tick = 0; flashT = 0; lastMS = 0; groundX = 0;
+      dino.y = GY; dino.vy = 0; dino.gr = true; dino.duck = false; dino.af = 0;
+      obs = []; birds = []; parts = []; nextObs = 100; nextBird = 500;
+      initClouds(); state = 'running';
     }
-  }
-}
 
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
-</script>
+    // ── UPDATE ───────────────────────────────────────
+    function update() {
+      if (state !== 'running') return;
+      tick++;
+      score += spd * 0.03;
+      spd = Math.min(18, 6 + score * 0.004);
+
+      const ms = Math.floor(score / 100) * 100;
+      if (ms > 0 && ms !== lastMS) { lastMS = ms; flashT = 6; }
+      if (flashT > 0) flashT--;
+
+      const gt = dino.duck ? GY + 14 : GY;
+      if (!dino.gr) {
+        dino.vy += 0.65; dino.y += dino.vy;
+        if (dino.y >= gt) { dino.y = gt; dino.vy = 0; dino.gr = true; }
+      } else { dino.y = gt; }
+      dino.af++;
+
+      groundX = (groundX - spd); if (groundX < -GW) groundX += GW;
+      clouds.forEach(c => { c.x -= spd * 0.18; if (c.x < -90) c.x = GW + 90; });
+
+      nextObs--;
+      if (nextObs <= 0) {
+        obs.push({ x: GW + 10, t: Math.floor(Math.random() * 3) });
+        nextObs = 60 + Math.random() * 90 + Math.max(0, 30 - spd * 1.5);
+      }
+      obs.forEach(o => o.x -= spd);
+      obs = obs.filter(o => o.x > -90);
+
+      if (score > 200) {
+        nextBird--;
+        if (nextBird <= 0) {
+          const ys = [GY - 90, GY - 115, GY - 65];
+          birds.push({ x: GW + 10, y: ys[Math.floor(Math.random() * 3)] });
+          nextBird = 130 + Math.random() * 110;
+        }
+      }
+      birds.forEach(b => b.x -= spd * 1.1);
+      birds = birds.filter(b => b.x > -100);
+
+      parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life -= 0.05; });
+      parts = parts.filter(p => p.life > 0);
+
+      // collisions
+      const db = dbox();
+      for (const o of obs) if (hit(db, obox(o))) { die(); return; }
+      for (const b of birds) if (hit(db, { x: b.x + 6, y: b.y + 4, w: BIRD_W - 12, h: BIRD_H - 6 })) { die(); return; }
+    }
+
+    function dbox() {
+      if (dino.duck) return { x: dino.x + 8, y: dino.y - 20, w: DINO_W - 16, h: 20 };
+      return { x: dino.x + 10, y: dino.y - DINO_H + 6, w: DINO_W - 18, h: DINO_H - 10 };
+    }
+    function obox(o) {
+      if (o.t === 0) return { x: o.x + 4, y: GY - CACT_H, w: CACT_W - 8, h: CACT_H };
+      if (o.t === 1) return { x: o.x + 4, y: GY - CACTS_H, w: CACTS_W - 8, h: CACTS_H };
+      // double = two small side by side
+      return { x: o.x + 4, y: GY - CACT_H, w: CACT_W + CACTS_W - 4, h: CACT_H };
+    }
+    function hit(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+
+    function die() {
+      state = 'dead';
+      if (score > hiScore) hiScore = score;
+      for (let i = 0; i < 16; i++) {
+        parts.push({
+          x: dino.x + 20, y: dino.y - DINO_H / 2,
+          vx: (Math.random() - .5) * 6,
+          vy: (Math.random() - 1.3) * 6,
+          life: 1
+        });
+      }
+    }
+
+    // ── DRAW ─────────────────────────────────────────
+    function drawCloud(x, y) {
+      ctx.fillStyle = '#ccc';
+      ctx.fillRect(x + 16, y, 26, 10);
+      ctx.fillRect(x + 8, y + 8, 40, 10);
+      ctx.fillRect(x, y + 14, 54, 8);
+    }
+
+    function draw() {
+      ctx.fillStyle = BG; ctx.fillRect(0, 0, GW, GH);
+      if (flashT > 0 && flashT % 2 === 0) { ctx.fillStyle = '#e8e8e8'; ctx.fillRect(0, 0, GW, GH); }
+
+      clouds.forEach(c => drawCloud(c.x, c.y));
+
+      // ground
+      ctx.fillStyle = COL; ctx.fillRect(0, GY + 2, GW, 2);
+      for (let i = 0; i < 28; i++) {
+        const gx = ((groundX + i * 32) % GW + GW) % GW;
+        ctx.fillStyle = '#bbb';
+        ctx.fillRect(gx, GY + 6, 18, 2);
+        ctx.fillRect(gx + 12, GY + 10, 8, 2);
+      }
+
+      // obstacles
+      obs.forEach(o => {
+        if (o.t === 0) {
+          // double-arm cactus (from your screenshot)
+          ctx.drawImage(SP.cactus, o.x, GY - CACT_H);
+        } else if (o.t === 1) {
+          // small single cactus
+          ctx.drawImage(SP.cactS, o.x, GY - CACTS_H);
+        } else {
+          // two double-arm cacti side by side
+          ctx.drawImage(SP.cactus, o.x, GY - CACT_H);
+          ctx.drawImage(SP.cactus, o.x + CACT_W + 4, GY - CACT_H);
+        }
+      });
+
+      // birds
+      const bsp = Math.floor(tick / 10) % 2 === 0 ? SP.bird1 : SP.bird2;
+      birds.forEach(b => ctx.drawImage(bsp, b.x, b.y));
+
+      // dino
+      let dsp;
+      if (state === 'dead') dsp = SP.dead;
+      else if (!dino.gr) dsp = SP.run1;
+      else dsp = Math.floor(dino.af / 7) % 2 === 0 ? SP.run1 : SP.run2;
+
+      ctx.drawImage(dsp, dino.x, dino.y - DINO_H);
+
+      // particles
+      parts.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = COL;
+        ctx.fillRect(p.x, p.y, 4, 4);
+      });
+      ctx.globalAlpha = 1;
+
+      // score
+      ctx.font = 'bold 20px "Courier New",monospace';
+      ctx.textAlign = 'right';
+      const sc = String(Math.floor(score)).padStart(5, '0');
+      const hi = String(Math.floor(Math.max(hiScore, score))).padStart(5, '0');
+      ctx.fillStyle = DIM; ctx.fillText('HI', GW - 162, 32);
+      ctx.fillStyle = TXT; ctx.fillText(hi, GW - 90, 32);
+      ctx.fillStyle = TXT; ctx.fillText(sc, GW - 14, 32);
+
+      // game over
+      if (state === 'dead' || state === 'redirecting') {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = TXT;
+        ctx.font = 'bold 18px "Courier New",monospace';
+        ctx.letterSpacing = '8px';
+        ctx.fillText('SP101: Intellectual Property Issues', GW / 2, GH / 2 - 30);
+        ctx.letterSpacing = '0px';
+        if (state === 'redirecting') {
+          ctx.font = '14px "Courier New",monospace';
+          ctx.fillStyle = DIM;
+          ctx.fillText('redirecting...', GW / 2, GH / 2 + 10);
+        } else {
+          const cx = GW / 2, cy = GH / 2 + 4;
+          ctx.strokeStyle = TXT; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.roundRect(cx - 22, cy - 18, 44, 36, 4); ctx.stroke();
+          ctx.strokeStyle = TXT; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(cx, cy, 10, 0.7, Math.PI * 2 - 0.7); ctx.stroke();
+          ctx.fillStyle = TXT;
+          ctx.beginPath();
+          ctx.moveTo(cx + 9, cy - 4); ctx.lineTo(cx + 15, cy); ctx.lineTo(cx + 9, cy + 4);
+          ctx.fill();
+          ctx.font = '12px "Courier New",monospace';
+          ctx.fillStyle = DIM;
+          ctx.letterSpacing = '2px';
+          ctx.fillText('i wanna know', GW / 2, GH / 2 + 38);
+          ctx.letterSpacing = '0px';
+        }
+      }
+    }
+
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
+  </script>
 </body>
+
 </html>
